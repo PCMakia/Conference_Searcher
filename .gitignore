@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+dist/
+build/
+*.spec.bak
+.cache/
+*.db
+.pytest_cache/
+ConferenceFinder.exe
