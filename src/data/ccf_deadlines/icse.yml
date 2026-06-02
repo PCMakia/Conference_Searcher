@@ -1,0 +1,16 @@
+- title: ICSE
+  description: IEEE/ACM International Conference on Software Engineering
+  sub: SE
+  rank:
+    ccf: A
+    core: A*
+  dblp: icse
+  confs:
+    - year: 2027
+      id: icse27
+      link: https://conf.researchr.org/home/icse-2027
+      timeline:
+        - deadline: '2026-10-01 23:59:59'
+      timezone: AoE
+      date: Apr 2027
+      place: Seattle, WA, USA

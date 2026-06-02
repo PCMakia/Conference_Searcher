@@ -1,0 +1,31 @@
+Title,Acronym,Rank,Average Rating
+International Conference on Computer Vision,ICCV,A*,450
+IEEE/CVF Conference on Computer Vision and Pattern Recognition,CVPR,A*,450
+Conference on Neural Information Processing Systems,NeurIPS,A*,350
+International Conference on Machine Learning,ICML,A*,280
+International Conference on Learning Representations,ICLR,A*,200
+AAAI Conference on Artificial Intelligence,AAAI,A,180
+International Joint Conference on Artificial Intelligence,IJCAI,A,150
+Annual Meeting of the Association for Computational Linguistics,ACL,A*,120
+Conference on Empirical Methods in Natural Language Processing,EMNLP,A,100
+North American Chapter of the Association for Computational Linguistics,NAACL,A,80
+ACM SIGKDD Conference on Knowledge Discovery and Data Mining,KDD,A*,95
+ACM International Conference on Information and Knowledge Management,CIKM,A,70
+ACM International World Wide Web Conference,WWW,A,75
+IEEE International Conference on Data Engineering,ICDE,A,65
+ACM SIGMOD Conference,SIGMOD,A*,90
+Very Large Data Bases Conference,VLDB,A*,85
+USENIX Symposium on Operating Systems Design and Implementation,OSDI,A*,70
+ACM Symposium on Operating Systems Principles,SOSP,A*,68
+IEEE Symposium on Security and Privacy,S&P,A*,60
+ACM Conference on Computer and Communications Security,CCS,A,55
+Network and Distributed System Security Symposium,NDSS,A,50
+International Conference on Software Engineering,ICSE,A*,75
+ACM SIGSOFT International Symposium on Foundations of Software Engineering,FSE,A,55
+ACM SIGPLAN Conference on Programming Language Design and Implementation,PLDI,A,60
+ACM International Conference on Architectural Support for Programming Languages and Operating Systems,ASPLOS,A,58
+IEEE International Conference on Robotics and Automation,ICRA,A,45
+IEEE/RSJ International Conference on Intelligent Robots and Systems,IROS,A,40
+ACM International Conference on Multimedia,ACM MM,A,50
+IEEE International Conference on Acoustics Speech and Signal Processing,ICASSP,B,35
+International Conference on Automated Planning and Scheduling,ICAPS,B,30

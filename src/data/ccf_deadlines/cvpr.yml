@@ -1,0 +1,16 @@
+- title: CVPR
+  description: IEEE/CVF Conference on Computer Vision and Pattern Recognition
+  sub: CV
+  rank:
+    ccf: A
+    core: A*
+  dblp: cvpr
+  confs:
+    - year: 2026
+      id: cvpr26
+      link: https://cvpr.thecvf.com/
+      timeline:
+        - deadline: '2025-11-14 23:59:59'
+      timezone: UTC-8
+      date: June 2026
+      place: Denver, CO, USA

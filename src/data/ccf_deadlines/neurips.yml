@@ -1,0 +1,16 @@
+- title: NeurIPS
+  description: Conference on Neural Information Processing Systems
+  sub: AI
+  rank:
+    ccf: A
+    core: A*
+  dblp: nips
+  confs:
+    - year: 2025
+      id: neurips25
+      link: https://neurips.cc/
+      timeline:
+        - deadline: '2025-05-15 20:00:00'
+      timezone: AoE
+      date: Dec 2025
+      place: San Diego, CA, USA
