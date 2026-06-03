@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import List, Optional
 
 from src.discovery.ccf_deadlines import CCFDeadlinesClient
@@ -23,6 +23,7 @@ class SearchResult:
     status: str
     raw_count: int = 0
     filtered_count: int = 0
+    from_session_cache: bool = False
 
 
 class SearchOrchestrator:
@@ -39,6 +40,7 @@ class SearchOrchestrator:
         self.ranker = PrestigeRanker()
         self.link_resolver = LinkResolver(cache=self.cache)
         self.semantic = SemanticSearch()
+        self._session_results: dict[tuple[str, str], SearchResult] = {}
 
     def search(
         self,
@@ -46,6 +48,15 @@ class SearchOrchestrator:
         semantic_query: str = "",
         max_pages: int = 15,
     ) -> SearchResult:
+        session_key = (topic, semantic_query.strip())
+        cached_result = self._session_results.get(session_key)
+        if cached_result is not None:
+            return replace(
+                cached_result,
+                status=f"{cached_result.status} (session cache)",
+                from_session_cache=True,
+            )
+
         status_parts: List[str] = []
         ref = today()
         status_parts.append(f"Today: {ref.isoformat()}")
@@ -91,12 +102,14 @@ class SearchOrchestrator:
         if raw_count == 0 and not ranked:
             status += " | No data — check internet connection"
 
-        return SearchResult(
+        result = SearchResult(
             conferences=ranked,
             status=status,
             raw_count=raw_count,
             filtered_count=filtered_count,
         )
+        self._session_results[session_key] = result
+        return result
 
     def _merge_sources(
         self,
