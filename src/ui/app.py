@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import threading
 import webbrowser
-from datetime import datetime
+from datetime import date, datetime
 from tkinter import messagebox, ttk
 import tkinter as tk
 from typing import List, Optional
@@ -10,9 +10,12 @@ from typing import List, Optional
 from src.filters.conference_status import (
     attend_link_enabled,
     attendance_status_label,
+    enrich_conference_status,
     submit_link_enabled,
     submission_status_label,
+    today,
 )
+from src.filters.upcoming_filter import parse_conference_dates
 from src.models import Conference
 from src.search.orchestrator import SearchOrchestrator, SearchResult
 from src.search.topics import TOPIC_CHOICES
@@ -49,6 +52,7 @@ class ConferenceFinderApp:
         self.orchestrator = SearchOrchestrator()
         self._results: List[Conference] = []
         self._row_links: dict[str, tuple[str, str, bool, bool]] = {}
+        self._sort_by_date = False
 
         self._build_ui()
 
@@ -80,6 +84,7 @@ class ConferenceFinderApp:
         mid.pack(fill=tk.BOTH, expand=True)
 
         self.tree = make_treeview(mid, list(self.COLUMNS))
+        self.tree.heading("Dates", command=self._toggle_date_sort)
         self.tree.bind("<Double-1>", self._on_double_click)
 
         bottom = ttk.Frame(self.root, padding=8)
@@ -265,14 +270,55 @@ class ConferenceFinderApp:
         self._finish_loading_progress_success()
         self.bottom_hint_var.set(_DEFAULT_BOTTOM_HINT)
 
-        results = result.conferences
-        self._results = results
-        self._row_links.clear()
+        self._results = result.conferences
+        self._sort_by_date = False
+        self._update_dates_heading()
+        self._populate_tree()
 
+        ts = datetime.now().strftime("%H:%M:%S")
+        self.status_var.set(f"{result.status} (updated {ts})")
+        if len(self._results) == 0:
+            messagebox.showinfo(
+                "No results",
+                "No upcoming US conferences matched your filters.\n\n"
+                f"{result.status}\n\n"
+                "Tips: ensure you are online, try 'All Computer Science', "
+                "or clear the semantic search box.",
+            )
+
+    def _toggle_date_sort(self) -> None:
+        if not self._results:
+            return
+        self._sort_by_date = not self._sort_by_date
+        self._update_dates_heading()
+        self._populate_tree()
+
+    def _update_dates_heading(self) -> None:
+        text = "Dates (by date) ▼" if self._sort_by_date else "Dates"
+        self.tree.heading("Dates", text=text, command=self._toggle_date_sort)
+
+    @staticmethod
+    def _date_sort_key(conf: Conference) -> tuple[int, str]:
+        ref = today()
+        enrich_conference_status(conf, ref)
+        start = conf.start_date
+        if not start and conf.dates:
+            start, _ = parse_conference_dates(conf.dates)
+        sort_date = start or conf.end_date or conf.deadline_date
+        ordinal = sort_date.toordinal() if sort_date else date.max.toordinal()
+        return (ordinal, conf.name.lower())
+
+    def _ordered_results(self) -> List[Conference]:
+        if self._sort_by_date:
+            return sorted(self._results, key=self._date_sort_key)
+        return self._results
+
+    def _populate_tree(self) -> None:
+        self._row_links.clear()
         for item in self.tree.get_children():
             self.tree.delete(item)
 
-        for i, conf in enumerate(results, start=1):
+        for i, conf in enumerate(self._ordered_results(), start=1):
             iid = str(i)
             submit_status = submission_status_label(conf)
             attend_status = attendance_status_label(conf)
@@ -306,17 +352,6 @@ class ConferenceFinderApp:
                     submit_col,
                     attend_col,
                 ),
-            )
-
-        ts = datetime.now().strftime("%H:%M:%S")
-        self.status_var.set(f"{result.status} (updated {ts})")
-        if len(results) == 0:
-            messagebox.showinfo(
-                "No results",
-                "No upcoming US conferences matched your filters.\n\n"
-                f"{result.status}\n\n"
-                "Tips: ensure you are online, try 'All Computer Science', "
-                "or clear the semantic search box.",
             )
 
     def _on_double_click(self, event) -> None:

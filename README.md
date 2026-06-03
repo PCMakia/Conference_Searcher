@@ -9,7 +9,8 @@ Windows desktop app that discovers upcoming **US** computer-science conferences 
 - Filters: US locations only, excludes past conferences
 - Results sorted by prestige (CORE A\*/A/B/C + CCF bonus + h5-index)
 - Double-click **Submit** or **Attend** to open links in your browser
-- SQLite HTTP cache (24h) under `%USERPROFILE%\.conference_finder\`
+- Live web discovery: WikiCFP + Google/DuckDuckGo web search on each session's first Search
+- Session in-memory cache (cleared when the app exits; repeat Search in same session is instant)
 
 ## Requirements
 
@@ -72,14 +73,15 @@ src/
   filters/             US location, upcoming dates
   ranking/             CORE/CCF matching, prestige sort, links
   search/              Topics, semantic search, orchestrator
-  storage/             SQLite cache
+  storage/             Session in-memory cache (+ optional SQLite fallback)
   data/                Bundled rankings (core_rankings.csv, ccf_deadlines/)
 tests/                 Unit tests with HTML fixtures
 ```
 
 ## Data sources
 
-- [WikiCFP](http://www.wikicfp.com) — conference discovery (cached scraping)
+- [WikiCFP](http://www.wikicfp.com) — conference discovery (live scrape)
+- Google/DuckDuckGo web search — supplemental discovery via `ddgs` (optional `GOOGLE_CSE_API_KEY` + `GOOGLE_CSE_ID` for official Custom Search)
 - Bundled [CORE](https://portal.core.edu.au/conf-ranks/)-style rankings CSV
 - Bundled [CCF-Deadlines](https://github.com/ccfddl/ccf-deadlines)-style YAML subset
 - Optional: [developers.events](https://developers.events) CFP JSON for extra links
@@ -98,4 +100,5 @@ See project plan for GitHub, Stack Overflow, and Google Scholar references (Agen
 
 - Prestige matching depends on acronym/title fuzzy match to bundled rankings
 - WikiCFP HTML layout may change; parser has fixture tests
-- Not a crawl of the entire web — WikiCFP + curated rankings + optional developers.events
+- Not a crawl of the entire web — WikiCFP + web search + curated rankings + optional developers.events
+- First Search each app session requires internet; identical repeat searches use session cache until you close the app
