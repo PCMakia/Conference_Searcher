@@ -22,6 +22,11 @@ _DEFAULT_BOTTOM_HINT = (
     "Submit/Attend show Open only if deadline or conference date is today or later. "
     "Double-click Open to open the link."
 )
+_DEFAULT_WIDTH = 1000
+_DEFAULT_HEIGHT = 580
+_LABEL_WRAP = _DEFAULT_WIDTH - 40
+
+
 class ConferenceFinderApp:
     COLUMNS = (
         "Rank",
@@ -37,7 +42,9 @@ class ConferenceFinderApp:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("US CS Conference Finder")
-        self.root.minsize(1000, 550)
+        self.root.geometry(f"{_DEFAULT_WIDTH}x{_DEFAULT_HEIGHT}")
+        self.root.minsize(_DEFAULT_WIDTH, 550)
+        self.root.maxsize(_DEFAULT_WIDTH, 2000)
 
         self.orchestrator = SearchOrchestrator()
         self._results: List[Conference] = []
@@ -60,8 +67,14 @@ class ConferenceFinderApp:
         self.status_var = tk.StringVar(
             value="Ready. Submit/Attend Open/Closed compared to today's date."
         )
-        status = ttk.Label(self.root, textvariable=self.status_var, padding=(8, 0))
-        status.pack(fill=tk.X)
+        status = ttk.Label(
+            self.root,
+            textvariable=self.status_var,
+            padding=(8, 0),
+            wraplength=_LABEL_WRAP,
+            justify=tk.LEFT,
+        )
+        status.pack(fill=tk.X, anchor=tk.W)
 
         mid = ttk.Frame(self.root, padding=8)
         mid.pack(fill=tk.BOTH, expand=True)
@@ -81,8 +94,13 @@ class ConferenceFinderApp:
         )
         self.progress.pack(fill=tk.X)
         self.bottom_hint_var = tk.StringVar(value=_DEFAULT_BOTTOM_HINT)
-        self.bottom_hint = ttk.Label(bottom, textvariable=self.bottom_hint_var)
-        self.bottom_hint.pack(anchor=tk.W, pady=(4, 0))
+        self.bottom_hint = ttk.Label(
+            bottom,
+            textvariable=self.bottom_hint_var,
+            wraplength=_LABEL_WRAP,
+            justify=tk.LEFT,
+        )
+        self.bottom_hint.pack(fill=tk.X, anchor=tk.W, pady=(4, 0))
 
         self.query_entry.bind("<Return>", lambda _: self._on_search())
 
@@ -136,6 +154,12 @@ class ConferenceFinderApp:
             maximum=100,
             value=0,
         )
+
+    def _enforce_window_width(self) -> None:
+        """Keep window width fixed if layout tried to expand it."""
+        height = max(self.root.winfo_height(), 550)
+        if self.root.winfo_width() != _DEFAULT_WIDTH:
+            self.root.geometry(f"{_DEFAULT_WIDTH}x{height}")
 
     def _start_loading_progress(self) -> None:
         self.progress.configure(
@@ -220,11 +244,13 @@ class ConferenceFinderApp:
             msg = self._friendly_error(error)
             self._finish_loading_progress_error(msg)
             self.status_var.set(f"Error: {msg}")
+            self._enforce_window_width()
             return
 
         if result is None:
             self._finish_loading_progress_error("Search failed unexpectedly.")
             self.status_var.set("Search failed.")
+            self._enforce_window_width()
             return
 
         failure_msg = self._failure_message_from_result(result)
@@ -233,6 +259,7 @@ class ConferenceFinderApp:
             self.status_var.set(f"Error: {failure_msg}")
             for item in self.tree.get_children():
                 self.tree.delete(item)
+            self._enforce_window_width()
             return
 
         self._finish_loading_progress_success()
