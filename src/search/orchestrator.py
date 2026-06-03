@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 from src.discovery.ccf_deadlines import CCFDeadlinesClient
+from src.discovery.web_search import WebSearchClient
 from src.discovery.wikicfp_client import WikiCFPClient
 from src.filters.conference_status import enrich_conference_status, is_upcoming, today
 from src.filters.us_filter import is_us_location
@@ -29,9 +30,11 @@ class SearchOrchestrator:
         self,
         cache: Optional[InMemoryCache] = None,
         wikicfp: Optional[WikiCFPClient] = None,
+        web_search: Optional[WebSearchClient] = None,
     ):
         self.cache = cache or InMemoryCache()
         self.wikicfp = wikicfp or WikiCFPClient(self.cache)
+        self.web_search = web_search or WebSearchClient(self.cache)
         self.ccf = CCFDeadlinesClient()
         self.ranker = PrestigeRanker()
         self.link_resolver = LinkResolver(cache=self.cache)
@@ -63,6 +66,10 @@ class SearchOrchestrator:
             )
             status_parts.append(kw_status)
             conferences = self._merge_sources(conferences, kw_rows)
+
+        web_rows, web_status = self.web_search.search(topic, semantic_query)
+        status_parts.append(web_status)
+        conferences = self._merge_sources(conferences, web_rows)
 
         raw_count = len(conferences)
         conferences = self._apply_filters(conferences, ref)
@@ -96,7 +103,7 @@ class SearchOrchestrator:
         primary: List[Conference],
         secondary: List[Conference],
     ) -> List[Conference]:
-        """Primary (WikiCFP) wins over secondary (bundled CCF) for the same venue."""
+        """Primary (WikiCFP) wins over secondary sources for the same venue."""
         by_key: dict[str, Conference] = {}
         for conf in primary:
             by_key[self._acronym_year_key(conf)] = conf

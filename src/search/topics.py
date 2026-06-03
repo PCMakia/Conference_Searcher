@@ -52,3 +52,18 @@ TOPIC_TO_CCF_SUB: dict[str, set[str]] = {
 
 def wikicfp_category(topic: str) -> str:
     return TOPIC_TO_WIKICFP.get(topic, "computer science")
+
+
+def web_search_query(topic: str, semantic_query: str = "") -> str:
+    """Build a web search query biased toward US conference CFP pages."""
+    from datetime import date
+
+    year = date.today().year
+    parts: list[str] = []
+    if semantic_query.strip():
+        parts.append(semantic_query.strip())
+    parts.append(topic)
+    parts.append("conference USA call for papers")
+    parts.append(str(year))
+    parts.append(str(year + 1))
+    return " ".join(parts)
