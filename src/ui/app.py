@@ -18,7 +18,10 @@ from src.search.orchestrator import SearchOrchestrator, SearchResult
 from src.search.topics import TOPIC_CHOICES
 from src.ui.widgets import labeled_combobox, labeled_entry, make_treeview
 
-
+_DEFAULT_BOTTOM_HINT = (
+    "Submit/Attend show Open only if deadline or conference date is today or later. "
+    "Double-click Open to open the link."
+)
 class ConferenceFinderApp:
     COLUMNS = (
         "Rank",
@@ -77,13 +80,9 @@ class ConferenceFinderApp:
             style="Idle.Horizontal.TProgressbar",
         )
         self.progress.pack(fill=tk.X)
-        ttk.Label(
-            bottom,
-            text=(
-                "Submit/Attend show Open only if deadline or conference date is today or later. "
-                "Double-click Open to open the link."
-            ),
-        ).pack(anchor=tk.W, pady=(4, 0))
+        self.bottom_hint_var = tk.StringVar(value=_DEFAULT_BOTTOM_HINT)
+        self.bottom_hint = ttk.Label(bottom, textvariable=self.bottom_hint_var)
+        self.bottom_hint.pack(anchor=tk.W, pady=(4, 0))
 
         self.query_entry.bind("<Return>", lambda _: self._on_search())
 
@@ -92,6 +91,7 @@ class ConferenceFinderApp:
         query = self.query_entry.get().strip()
         self.search_btn.config(state=tk.DISABLED)
         self.status_var.set("Fetching conferences…")
+        self.bottom_hint_var.set(_DEFAULT_BOTTOM_HINT)
         self._start_loading_progress()
 
         def worker():
@@ -120,6 +120,22 @@ class ConferenceFinderApp:
             lightcolor="#43a047",
             darkcolor="#1b5e20",
         )
+        style.configure(
+            "Error.Horizontal.TProgressbar",
+            troughcolor="#e8e8e8",
+            background="#c62828",
+            lightcolor="#e53935",
+            darkcolor="#b71c1c",
+        )
+
+    def _reset_progress_idle(self) -> None:
+        self.progress.stop()
+        self.progress.configure(
+            style="Idle.Horizontal.TProgressbar",
+            mode="determinate",
+            maximum=100,
+            value=0,
+        )
 
     def _start_loading_progress(self) -> None:
         self.progress.configure(
@@ -138,6 +154,61 @@ class ConferenceFinderApp:
             value=100,
         )
 
+    def _finish_loading_progress_error(self, message: str) -> None:
+        self.progress.stop()
+        self.progress.configure(
+            style="Error.Horizontal.TProgressbar",
+            mode="determinate",
+            maximum=100,
+            value=100,
+        )
+        self.bottom_hint_var.set(message)
+
+    @staticmethod
+    def _friendly_error(error: Exception) -> str:
+        try:
+            import requests
+        except ImportError:
+            requests = None  # type: ignore
+
+        if requests is not None:
+            if isinstance(error, requests.exceptions.ConnectionError):
+                return "No internet connection or the server could not be reached."
+            if isinstance(error, requests.exceptions.Timeout):
+                return "The request timed out. Check your internet connection and try again."
+
+        text = str(error).lower()
+        if any(
+            phrase in text
+            for phrase in (
+                "connection",
+                "network",
+                "internet",
+                "timed out",
+                "timeout",
+                "unreachable",
+                "name or service not known",
+                "getaddrinfo failed",
+            )
+        ):
+            return "No internet connection or the server could not be reached."
+        if "wikicfp" in text:
+            return "Could not reach WikiCFP. Check your internet connection."
+        return f"Search failed: {error}"
+
+    @staticmethod
+    def _failure_message_from_result(result: SearchResult) -> Optional[str]:
+        status_lower = result.status.lower()
+        if result.raw_count > 0 or result.conferences:
+            return None
+        if "check internet connection" in status_lower:
+            return "No internet connection or discovery sources returned no data."
+        if "wikicfp error" in status_lower:
+            return "Could not reach WikiCFP. Check your internet connection."
+        if "web search: unavailable" in status_lower and "wikicfp: 0" in status_lower:
+            return "Could not fetch conferences from the web. Check your internet connection."
+        return None
+
     def _show_results(
         self,
         result: Optional[SearchResult],
@@ -146,17 +217,26 @@ class ConferenceFinderApp:
         self.search_btn.config(state=tk.NORMAL)
 
         if error:
-            self.progress.stop()
-            messagebox.showerror("Search failed", str(error))
-            self.status_var.set(f"Error: {error}")
+            msg = self._friendly_error(error)
+            self._finish_loading_progress_error(msg)
+            self.status_var.set(f"Error: {msg}")
             return
 
         if result is None:
-            self.progress.stop()
-            self.status_var.set("No results.")
+            self._finish_loading_progress_error("Search failed unexpectedly.")
+            self.status_var.set("Search failed.")
+            return
+
+        failure_msg = self._failure_message_from_result(result)
+        if failure_msg:
+            self._finish_loading_progress_error(failure_msg)
+            self.status_var.set(f"Error: {failure_msg}")
+            for item in self.tree.get_children():
+                self.tree.delete(item)
             return
 
         self._finish_loading_progress_success()
+        self.bottom_hint_var.set(_DEFAULT_BOTTOM_HINT)
 
         results = result.conferences
         self._results = results
