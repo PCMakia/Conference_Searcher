@@ -68,7 +68,14 @@ class ConferenceFinderApp:
 
         bottom = ttk.Frame(self.root, padding=8)
         bottom.pack(fill=tk.X)
-        self.progress = ttk.Progressbar(bottom, mode="indeterminate")
+        self._configure_progress_styles()
+        self.progress = ttk.Progressbar(
+            bottom,
+            mode="determinate",
+            maximum=100,
+            value=0,
+            style="Idle.Horizontal.TProgressbar",
+        )
         self.progress.pack(fill=tk.X)
         ttk.Label(
             bottom,
@@ -85,7 +92,7 @@ class ConferenceFinderApp:
         query = self.query_entry.get().strip()
         self.search_btn.config(state=tk.DISABLED)
         self.status_var.set("Fetching conferences…")
-        self.progress.start(10)
+        self._start_loading_progress()
 
         def worker():
             try:
@@ -96,22 +103,60 @@ class ConferenceFinderApp:
 
         threading.Thread(target=worker, daemon=True).start()
 
+    @staticmethod
+    def _configure_progress_styles() -> None:
+        style = ttk.Style()
+        style.configure(
+            "Idle.Horizontal.TProgressbar",
+            troughcolor="#e8e8e8",
+            background="#e8e8e8",
+            lightcolor="#e8e8e8",
+            darkcolor="#e8e8e8",
+        )
+        style.configure(
+            "Success.Horizontal.TProgressbar",
+            troughcolor="#e8e8e8",
+            background="#2e7d32",
+            lightcolor="#43a047",
+            darkcolor="#1b5e20",
+        )
+
+    def _start_loading_progress(self) -> None:
+        self.progress.configure(
+            style="Idle.Horizontal.TProgressbar",
+            mode="indeterminate",
+            value=0,
+        )
+        self.progress.start(10)
+
+    def _finish_loading_progress_success(self) -> None:
+        self.progress.stop()
+        self.progress.configure(
+            style="Success.Horizontal.TProgressbar",
+            mode="determinate",
+            maximum=100,
+            value=100,
+        )
+
     def _show_results(
         self,
         result: Optional[SearchResult],
         error: Optional[Exception],
     ) -> None:
-        self.progress.stop()
         self.search_btn.config(state=tk.NORMAL)
 
         if error:
+            self.progress.stop()
             messagebox.showerror("Search failed", str(error))
             self.status_var.set(f"Error: {error}")
             return
 
         if result is None:
+            self.progress.stop()
             self.status_var.set("No results.")
             return
+
+        self._finish_loading_progress_success()
 
         results = result.conferences
         self._results = results
