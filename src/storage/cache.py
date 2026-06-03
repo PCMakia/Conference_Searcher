@@ -15,7 +15,28 @@ def _default_db_path() -> Path:
     return base / "cache.db"
 
 
-class Cache:
+class InMemoryCache:
+    """Session-scoped cache cleared when the app process exits."""
+
+    def __init__(self) -> None:
+        self._store: dict[str, Any] = {}
+
+    def get(self, cache_key: str) -> Optional[Any]:
+        return self._store.get(cache_key)
+
+    def set(self, cache_key: str, value: Any) -> None:
+        self._store[cache_key] = value
+
+    def delete(self, cache_key: str) -> None:
+        self._store.pop(cache_key, None)
+
+    def clear(self) -> None:
+        self._store.clear()
+
+
+class PersistentCache:
+    """SQLite-backed HTTP cache with TTL (optional fallback, not used by default)."""
+
     def __init__(self, db_path: Optional[Path] = None, ttl_seconds: int = DEFAULT_TTL_SECONDS):
         self.db_path = db_path or _default_db_path()
         self.ttl_seconds = ttl_seconds
@@ -57,3 +78,7 @@ class Cache:
     def delete(self, cache_key: str) -> None:
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("DELETE FROM http_cache WHERE cache_key = ?", (cache_key,))
+
+
+# Default cache for discovery clients: session-scoped, cleared on app exit.
+Cache = InMemoryCache

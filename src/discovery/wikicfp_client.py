@@ -10,7 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from src.models import Conference
-from src.storage.cache import Cache
+from src.storage.cache import Cache, InMemoryCache
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ MAX_PAGES_DEFAULT = 15
 
 
 class WikiCFPClient:
-    def __init__(self, cache: Optional[Cache] = None):
+    def __init__(self, cache: Optional[InMemoryCache] = None):
         self.cache = cache or Cache()
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": USER_AGENT})

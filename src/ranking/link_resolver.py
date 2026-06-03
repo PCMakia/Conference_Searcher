@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+from typing import Optional
+
 from src.discovery.developers_events import DevelopersEventsClient
 from src.models import Conference
+from src.storage.cache import InMemoryCache
 
 
 class LinkResolver:
-    def __init__(self, dev_events: DevelopersEventsClient | None = None):
-        self.dev_events = dev_events or DevelopersEventsClient()
+    def __init__(
+        self,
+        dev_events: DevelopersEventsClient | None = None,
+        cache: Optional[InMemoryCache] = None,
+    ):
+        self.dev_events = dev_events or DevelopersEventsClient(cache=cache)
 
     def resolve(self, conf: Conference) -> Conference:
         # WikiCFP event page often has the real CFP link

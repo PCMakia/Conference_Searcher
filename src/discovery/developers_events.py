@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 import requests
 
 from src.models import Conference
-from src.storage.cache import Cache
+from src.storage.cache import Cache, InMemoryCache
 
 API_URL = "https://developers.events/all-cfps.json"
 
@@ -14,7 +14,7 @@ API_URL = "https://developers.events/all-cfps.json"
 class DevelopersEventsClient:
     """Optional supplement for CFP URLs (dev/tech conferences)."""
 
-    def __init__(self, cache: Optional[Cache] = None):
+    def __init__(self, cache: Optional[InMemoryCache] = None):
         self.cache = cache or Cache()
 
     def fetch_cfps(self) -> List[dict]:

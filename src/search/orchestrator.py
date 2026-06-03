@@ -13,7 +13,7 @@ from src.ranking.link_resolver import LinkResolver
 from src.ranking.prestige import PrestigeRanker
 from src.search.semantic import SemanticSearch
 from src.search.topics import wikicfp_category
-from src.storage.cache import Cache
+from src.storage.cache import InMemoryCache
 
 
 @dataclass
@@ -27,14 +27,14 @@ class SearchResult:
 class SearchOrchestrator:
     def __init__(
         self,
-        cache: Optional[Cache] = None,
+        cache: Optional[InMemoryCache] = None,
         wikicfp: Optional[WikiCFPClient] = None,
     ):
-        self.cache = cache or Cache()
+        self.cache = cache or InMemoryCache()
         self.wikicfp = wikicfp or WikiCFPClient(self.cache)
         self.ccf = CCFDeadlinesClient()
         self.ranker = PrestigeRanker()
-        self.link_resolver = LinkResolver()
+        self.link_resolver = LinkResolver(cache=self.cache)
         self.semantic = SemanticSearch()
 
     def search(
@@ -47,7 +47,6 @@ class SearchOrchestrator:
         ref = today()
         status_parts.append(f"Today: {ref.isoformat()}")
 
-        # WikiCFP first (live web data); CCF YAML only fills gaps
         category = wikicfp_category(topic)
         wiki_rows, wiki_status = self.wikicfp.fetch_by_category(category, max_pages=max_pages)
         status_parts.append(wiki_status)
